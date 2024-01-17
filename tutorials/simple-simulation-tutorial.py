@@ -18,15 +18,17 @@ dhn_sim = DHNetworkSimulator()
 dhn_sim.load_network(from_file=True, path='network/', format='json_readable')
 
 # Plot network topology
-dhn_sim.plot_network_topology()
+#dhn_sim.plot_network_topology()
 
 # Run static dhn simulation for a time step t=0
 dhn_sim.run_simulation(t=0, sim_mode='static')
 
 # OR: Run dynamic dhn simulation for a time step t
-# dhn_sim.run_simulation(t=0, sim_mode='dynamic')
+#dhn_sim.run_simulation(t=0, sim_mode='dynamic')
 
 # Get results from Simulator instance by component and parameter
 mdot_grid = dhn_sim.get_value_of_network_component(name='grid_v1',
                                                    type='valve',
                                                    parameter='mdot_from_kg_per_s')
+
+print(mdot_grid)
