@@ -141,6 +141,9 @@ class DHNetworkSimulator():
         elif type == 'heat_exchanger':
             component = self.net.heat_exchanger
             result = self.net.res_heat_exchanger
+        elif type == 'pt':
+            component = self.net.circ_pump_mass
+            result = self.net.res_circ_pump_mass
         elif type == 'controller':
             component = self.net.controller
             result = self.net.controller
@@ -168,6 +171,8 @@ class DHNetworkSimulator():
             component = self.net.ext_grid
         elif type == 'heat_exchanger':
             component = self.net.heat_exchanger
+        elif type == 'pt':
+            component = self.net.circ_pump_mass
         elif type == 'controller':
             component = self.net.controller
         else:

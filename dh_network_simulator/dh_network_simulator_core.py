@@ -146,7 +146,8 @@ def _get_pipe_flow_by_pressures(net, pipe_index):
 
 def _dynamic_temp_flow_calc_of(net, pipe, historical_data, inlet_junction, t):
     """
-        Dynamic temperature flow calculation for a given pipe based on the mass flow, pipe length and ambient temperature.
+        Dynamic temperature flow calculation for a given pipe based on the mass flow,
+        pipe length and ambient temperature.
     """
     # Set list of network junctions and pipes
     p = net.pipe['name'].to_list()
@@ -183,22 +184,27 @@ def _dynamic_temp_flow_calc_of(net, pipe, historical_data, inlet_junction, t):
 
 def _get_connected_junctions_id(net, pipe):
     """
-        Dynamic temperature flow calculation for a given pipe based on the mass flow, pipe length and ambient temperature.
+        ??.
+        
+        << why 'valves', here? Feb. 5, 2024>>
     """
     p = net.pipe['name'].to_list()
-    v = net.valve['name'].to_list()
 
     # Get connected junctions (direct and indirect)
     # Check direct connection via junction
     j_ids = []
     j_ids.append(net.pipe.at[p.index(pipe), 'to_junction'])
 
-    # Check connection via valve
-    valve_names = net.valve['name'].loc[net.valve['from_junction'].isin(j_ids)].values.tolist()
-    for valve in valve_names:
-        opened = net.valve.at[v.index(valve), 'opened']
-        if opened:
-            j_ids.append(net.valve.at[v.index(valve), 'to_junction'])
+    # Optionally check connection via valve
+    if hasattr(net,'valve'):
+        v = net.valve['name'].to_list()
+        valve_names = net.valve['name'].loc[net.valve['from_junction'].isin(j_ids)].values.tolist()
+        for valve in valve_names:
+            opened = net.valve.at[v.index(valve), 'opened']
+            if opened:
+                j_ids.append(net.valve.at[v.index(valve), 'to_junction'])
+    else:
+        j_ids.append(net.pipe.at[p.index(pipe), 'from_junction'])
 
     # Get connected junction names
     j_names = net.junction['name'].iloc[j_ids].values.tolist()
@@ -208,7 +214,8 @@ def _get_connected_junctions_id(net, pipe):
 
 def _update_temperatures_of_connected_junctions_to(net, pipe):
     """
-        Overwrite the temperatures of the junction(s) connected to the end of a pipe.
+        Overwrite the temperatures of the junction(s) connected to the
+        end of a pipe.
     """
     # Get connected junctions to the pipe end
     j_ids, j_names = _get_connected_junctions_id(net=net,
@@ -221,7 +228,8 @@ def _update_temperatures_of_connected_junctions_to(net, pipe):
 
 def _update_temperatures_of_connected_hex_to(net, pipe):
     """
-        Overwrite the temperatures of the connected heat exchangers connected to the end of a pipe.
+        Overwrite the temperatures of the connected heat exchangers
+        connected to the end of a pipe.
     """
     # Get connected junctions to the pipe end
     j_ids, j_names = _get_connected_junctions_id(net=net,
@@ -237,20 +245,30 @@ def _update_temperatures_of_connected_hex_to(net, pipe):
 def _update_pipe_inlet_temperature_at_junction(net, junction):
     """
         Overwrites the inlet temperature of all pipes connected to a junction.
-        If a valve is connected to the junction, it also overwrites the inlet temperature of pipes connected to the outlet of the valve.
+        If a valve is connected to the junction, it also overwrites the inlet
+        temperature of pipes connected to the outlet of the valve.
     """
     j = net.junction['name'].to_list()
     p = net.pipe['name'].to_list()
-    v = net.valve['name'].to_list()
 
     conn_j_id = [j.index(junction)]
     # Get number of incoming pipes
-    # Check connection via valve
-    conn_v_name = net.valve['name'].loc[net.valve['to_junction'].isin(conn_j_id)].values.tolist()
-    for valve in conn_v_name:
-        opened = net.valve.at[v.index(valve), 'opened']
-        if opened:
-            conn_j_id.append(net.valve.at[v.index(valve), 'from_junction'])
+
+    if hasattr(net,'valve'):
+        # Optionally check connection via valve.
+        v = net.valve['name'].to_list()
+        conn_v_name = net.valve['name'].loc[net.valve['to_junction'].isin(conn_j_id)].values.tolist()
+        for valve in conn_v_name:
+            opened = net.valve.at[v.index(valve), 'opened']
+            if opened:
+                conn_j_id.append(net.valve.at[v.index(valve), 'from_junction'])
+    if hasattr(net,'circ_pump_mass'):
+        # Optionally check connection via pump.
+        v = net.circ_pump_mass['name'].to_list()
+        conn_v_name = net.circ_pump_mass['name'].loc[net.circ_pump_mass['to_junction'].isin(conn_j_id)].values.tolist()
+        for pump in conn_v_name:
+            conn_j_id.append(net.circ_pump_mass.at[v.index(pump), 'from_junction'])
+
     pipes_in = net.pipe['name'].loc[net.pipe['to_junction'].isin(conn_j_id)].values.tolist()
 
     mfsum = []

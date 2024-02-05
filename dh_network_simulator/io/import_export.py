@@ -14,15 +14,14 @@ def export_network_components(net, path='', format=''):
 
     # Readable component-wise json export
     elif format == 'json_readable':
-        # Create components list from network
-        components_dict = {'junctions': net.junction,
-                           'pipes': net.pipe,
-                           'heat_exchangers': net.heat_exchanger,
-                           'sinks': net.sink,
-                           'sources': net.source,
-                           'valves': net.valve,
-                           'controllers': net.controller
-        }
+        # Create components list from network (to avoid errors when specific
+        # component not present!).
+        components_dict = {}
+        keylist = ['junction', 'pipe', 'heat_exchanger', 'circ_pump_mass',
+                   'sink', 'source', 'valve', 'controller']
+        for key in keylist:
+            if hasattr(net, key):
+                components_dict[key+('' if key == 'circ_pump_mass' else 's')]=getattr(net, key)
 
         # Create new network.json file
         for component in components_dict:
@@ -55,13 +54,13 @@ def import_network_components(net, format='json_default', path=''):
         # import components
         _import_junctions_to(net, path)
         _import_pipes_to(net, path)
-        _import_sinks_to(net, path)
-        _import_sources_to(net, path)
-        _import_valves_to(net, path)
-        _import_external_grids_to(net, path)
+        #_import_sinks_to(net, path)
+        #_import_sources_to(net, path)
+        #_import_valves_to(net, path)
+        #_import_external_grids_to(net, path)
         _import_heat_exchangers_to(net, path)
         _import_controllers_to(net, path)
-        # _import_pumps_to(net, path)  # TODO: Import inline pumps (check support of pandapipes)
+        _import_pumps_to(net, path)  # TODO: Import inline pumps (check support of pandapipes)
 
     return net
 
@@ -264,5 +263,19 @@ def _import_pumps_to(net, path):
         Import all pump components from import file (json_readable).
     """
     # TODO: Implement import function of pumps
-    pumps = []
-    return pumps
+    # Load JSON from file
+    f = open(path+'circ_pump_mass.json')
+    circ_pump_mass = json.load(f)
+
+    # add valves to pandapipes network
+    for g in circ_pump_mass:
+        pp.create_circ_pump_const_mass_flow(net,
+                                            return_junction   = g.get('return_junction'),
+                                            flow_junction     = g.get('flow_junction'),
+                                            name              = g.get('name'),
+                                            p_flow_bar        = g.get('p_flow_bar'),
+                                            mdot_flow_kg_per_s= g.get('mdot_flow_kg_per_s'),
+                                            t_flow_k          = g.get('t_flow_k'),
+                                            type='pt')
+
+    return circ_pump_mass
