@@ -204,12 +204,19 @@ def _get_connected_junctions_id(net, pipe):
             if opened:
                 j_ids.append(net.valve.at[v.index(valve), 'to_junction'])
                 
+    #elif hasattr(net,'heat_exchanger'):
+    #    # Optionally check connection via hx.
+    #    v = net.heat_exchanger['name'].to_list()
+    #    hx_name = net.heat_exchanger['name'].loc[net.heat_exchanger['from_junction'].isin(j_ids)].values.tolist()
+    #    for hx in hx_name:
+    #        j_ids.append(net.heat_exchanger.at[v.index(pump), 'to_junction'])
+
     elif hasattr(net,'circ_pump_mass'):
         # Optionally check connection via pump.
         v = net.circ_pump_mass['name'].to_list()
-        pump_name = net.circ_pump_mass['name'].loc[net.circ_pump_mass['flow_junction'].isin(j_ids)].values.tolist()
+        pump_name = net.circ_pump_mass['name'].loc[net.circ_pump_mass['return_junction'].isin(j_ids)].values.tolist()
         for pump in pump_name:
-            j_ids.append(net.circ_pump_mass.at[v.index(pump), 'return_junction'])
+            j_ids.append(net.circ_pump_mass.at[v.index(pump), 'flow_junction'])
 
     else:
         j_ids.append(net.pipe.at[p.index(pipe), 'from_junction'])
@@ -270,6 +277,14 @@ def _update_pipe_inlet_temperature_at_junction(net, junction):
             opened = net.valve.at[v.index(valve), 'opened']
             if opened:
                 conn_j_id.append(net.valve.at[v.index(valve), 'from_junction'])
+    
+    if hasattr(net,'heat_exchanger'):
+        # Optionally check connection via valve.
+        v = net.heat_exchanger['name'].to_list()
+        conn_v_name = net.heat_exchanger['name'].loc[net.heat_exchanger['to_junction'].isin(conn_j_id)].values.tolist()
+        for hx in conn_v_name:
+            conn_j_id.append(net.heat_exchanger.at[v.index(hx), 'from_junction'])
+    
     if hasattr(net,'circ_pump_mass'):
         # Optionally check connection via pump.
         v = net.circ_pump_mass['name'].to_list()
