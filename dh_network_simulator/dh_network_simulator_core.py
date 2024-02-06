@@ -203,6 +203,14 @@ def _get_connected_junctions_id(net, pipe):
             opened = net.valve.at[v.index(valve), 'opened']
             if opened:
                 j_ids.append(net.valve.at[v.index(valve), 'to_junction'])
+                
+    elif hasattr(net,'circ_pump_mass'):
+        # Optionally check connection via pump.
+        v = net.circ_pump_mass['name'].to_list()
+        pump_name = net.circ_pump_mass['name'].loc[net.circ_pump_mass['flow_junction'].isin(j_ids)].values.tolist()
+        for pump in pump_name:
+            j_ids.append(net.circ_pump_mass.at[v.index(pump), 'return_junction'])
+
     else:
         j_ids.append(net.pipe.at[p.index(pipe), 'from_junction'])
 
@@ -265,9 +273,9 @@ def _update_pipe_inlet_temperature_at_junction(net, junction):
     if hasattr(net,'circ_pump_mass'):
         # Optionally check connection via pump.
         v = net.circ_pump_mass['name'].to_list()
-        conn_v_name = net.circ_pump_mass['name'].loc[net.circ_pump_mass['to_junction'].isin(conn_j_id)].values.tolist()
+        conn_v_name = net.circ_pump_mass['name'].loc[net.circ_pump_mass['flow_junction'].isin(conn_j_id)].values.tolist()
         for pump in conn_v_name:
-            conn_j_id.append(net.circ_pump_mass.at[v.index(pump), 'from_junction'])
+            conn_j_id.append(net.circ_pump_mass.at[v.index(pump), 'return_junction'])
 
     pipes_in = net.pipe['name'].loc[net.pipe['to_junction'].isin(conn_j_id)].values.tolist()
 
