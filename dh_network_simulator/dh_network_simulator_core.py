@@ -35,7 +35,7 @@ def run_dynamic_pipeflow(net, t, historical_data, collector_connections):
                            historical_data=historical_data,
                            t=t)
 
-    # Store historic values
+    # Store historic values << where is the historical_data updated?? >>
     enqueue_results(net=net,
                     queue=historical_data,
                     collector_connections=collector_connections,
@@ -43,7 +43,8 @@ def run_dynamic_pipeflow(net, t, historical_data, collector_connections):
 
 def _dynamic_temp_flow_sim(net, historical_data, t):
     """
-        Dynamic temperature flow simulation step considering the thermal inertia in the network.
+        Dynamic temperature flow simulation step considering the thermal inertia
+        in the network.
     """
     # Get pipe stream according to the temperature flow in the network
     pipe_stream = _get_pipe_stream_of(net=net)
@@ -56,7 +57,8 @@ def _dynamic_temp_flow_sim(net, historical_data, t):
 
 def _dynamic_temp_flow_sim_of(net, pipe_stream, historical_data, t):
     """
-        Successive temperature flow calculation for a given pipe stream (from heat injection towards the consumers).
+        Successive temperature flow calculation for a given pipe stream (from heat
+        injection towards the consumers).
     """
     for pipe in pipe_stream:
         inlet_junction = _get_inlet_junction_of_pipe(net=net,
@@ -99,7 +101,7 @@ def _calc_consumer_return_temperature(net, hex):
     qext_w = net.heat_exchanger.at[h.index(hex), 'qext_w']
     forward_temp = net.res_junction.at[from_j_id, 't_k']
     mdot = net.res_heat_exchanger.at[h.index(hex), 'mdot_from_kg_per_s']
-    Cp_w = ISOBARIC_SPECIFIC_HEAT_WATER
+    Cp_w = ISOBARIC_SPECIFIC_HEAT_WATER # J/kg*K
 
     # Set forward temperature to hex component
     net.res_heat_exchanger.at[h.index(hex), 't_from_k'] = forward_temp
@@ -154,7 +156,7 @@ def _dynamic_temp_flow_calc_of(net, pipe, historical_data, inlet_junction, t):
     j = net.junction['name'].to_list()
 
     # Get required input parameters
-    Cp_w = ISOBARIC_SPECIFIC_HEAT_WATER
+    Cp_w = ISOBARIC_SPECIFIC_HEAT_WATER # J/(kg K)
     mf = net.res_pipe.at[p.index(pipe), 'mdot_from_kg_per_s']
     dx = net.pipe.at[p.index(pipe), 'length_km'] * 1000
     v_mean = net.res_pipe.at[p.index(pipe), 'v_mean_m_per_s']
@@ -168,6 +170,7 @@ def _dynamic_temp_flow_calc_of(net, pipe, historical_data, inlet_junction, t):
         df = pd.DataFrame().from_records(historical_data['t_k'], columns=['ts', 't_k'], index=['ts'])
         dt = dx / v_mean
         delay_t = t - dt
+        #print(f"doing this for pipe '{pipe}' with dt = {dt}, delay = {delay_t}")
         Tin = np.interp(delay_t, df.index, df['t_k'])
     else:
         Tin = net.res_junction.at[j.index(inlet_junction), 't_k']
@@ -175,8 +178,8 @@ def _dynamic_temp_flow_calc_of(net, pipe, historical_data, inlet_junction, t):
     # Set current inlet temperature of pipe
     net.res_pipe.at[p.index(pipe), 't_from_k'] = Tin
 
-    # Dynamic temperature drop along a pipe
-    exp = - (loss_coeff * dx) / (Cp_w * mf)
+    # Dynamic temperature drop along a pipe.
+    exp = - (loss_coeff * dx) / (Cp_w * mf) # (-)
     Tout = Ta + (Tin - Ta) * math.exp(exp)
 
     # Set pipe outlet temperature
