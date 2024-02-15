@@ -5,7 +5,8 @@ import pandapower.control as control
 
 def export_network_components(net, path='', format=''):
     """
-        Exports the network configurations via pandapipes default export function (json_default) or by the network component files (json_readable).
+        Exports the network configurations via pandapipes default export 
+        function (json_default) or by the network component files (json_readable).
     """
     # Default pandapipes json output
     if format == 'json_default':
@@ -17,7 +18,7 @@ def export_network_components(net, path='', format=''):
         # component not present!).
         components_dict = {}
         keylist = ['junction', 'pipe', 'heat_exchanger', 'circ_pump_mass',
-                   'sink', 'source', 'valve', 'controller']
+                   'sink', 'source', 'valve', 'controller', 'external_grid']
         for key in keylist:
             if hasattr(net, key):
                 components_dict[key+('' if key == 'circ_pump_mass' else 's')]=getattr(net, key)
@@ -41,7 +42,8 @@ def export_network_components(net, path='', format=''):
 
 def import_network_components(net, format='json_default', path=''):
     """
-        Imports the network configurations via pandapipes default import function (json_default) or by the network component files (json_readable).
+        Imports the network configurations via pandapipes default import 
+        function (json_default) or by the network component files (json_readable).
     """
     # Default pandapipes json import
     if format == 'json_default':
