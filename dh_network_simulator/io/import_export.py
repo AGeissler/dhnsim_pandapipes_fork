@@ -2,7 +2,6 @@ import pandapipes as pp
 import json
 from ..component_models.valve_control import CtrlValve
 import pandapower.control as control
-import pandapipes.plotting as plot
 
 def export_network_components(net, path='', format=''):
     """
@@ -51,10 +50,11 @@ def import_network_components(net, format='json_default', path=''):
 
     # Component-wise import from Readable json files
     elif format == 'json_readable':
+        # TODO: Add 'file exists' check to all of the import functions!
         # import components
         _import_junctions_to(net, path)
         _import_pipes_to(net, path)
-        #_import_sinks_to(net, path)
+        _import_sinks_to(net, path)
         #_import_sources_to(net, path)
         #_import_valves_to(net, path)
         #_import_external_grids_to(net, path)
@@ -64,26 +64,39 @@ def import_network_components(net, format='json_default', path=''):
 
     return net
 
+def _read_component_file(path, fnam):
+    # Code outline from: FHNW GPT Buddy, February 15th, 2024 at 15:05
+    # Load JSON from file
+    try:
+        with open(path+fnam, 'r') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        print(f"No file '{fnam}' found.")
+    except IOError:
+        print(f"An IO error occurred reading '{fnam}'.")
+    except Exception as e:
+        print(f"An unexpected error occurred trying to read '{fnam}': ", str(e))
+    return None
 
 def _import_heat_exchangers_to(net, path):
     """
         Import all heat exchanger components from import file (json_readable).
     """
-    # Load JSON from file
-    f = open(path+'heat_exchangers.json')
-    heat_exchangers = json.load(f)
-
+    # Load JSON from file.
+    heat_exchangers = _read_component_file(path, 'heat_exchangers.json')
+    
     # add heat exchangers to pandapipes network
-    for hex in heat_exchangers:
-        pp.create_heat_exchanger(net,
-                                 diameter_m=hex.get('diameter_m'),
-                                 from_junction=hex.get('from_junction'),
-                                 in_service=hex.get('in_service'),
-                                 loss_coefficient=hex.get('loss_coefficient'),
-                                 name=hex.get('name'),
-                                 qext_w=hex.get('qext_w'),
-                                 to_junction=hex.get('to_junction'),
-                                 type='heat_exchanger')
+    if heat_exchangers:
+        for hex in heat_exchangers:
+            pp.create_heat_exchanger(net,
+                                     diameter_m=hex.get('diameter_m'),
+                                     from_junction=hex.get('from_junction'),
+                                     in_service=hex.get('in_service'),
+                                     loss_coefficient=hex.get('loss_coefficient'),
+                                     name=hex.get('name'),
+                                     qext_w=hex.get('qext_w'),
+                                     to_junction=hex.get('to_junction'),
+                                     type='heat_exchanger')
 
     return heat_exchangers
 
@@ -141,18 +154,18 @@ def _import_sinks_to(net, path):
         Import all sink components from import file (json_readable).
     """
     # Load JSON from file
-    f = open(path+'sinks.json')
-    sinks = json.load(f)
+    sinks = _read_component_file(path, 'sinks.json')
 
     # add sinks to pandapipes network
-    for s in sinks:
-        pp.create_sink(net,
-                       junction=s.get('junction'),
-                       mdot_kg_per_s=s.get('mdot_kg_per_s'),
-                       scaling=s.get('scaling'),
-                       name=s.get('name'),
-                       in_service=s.get('in_service'),
-                       type='sink')
+    if sinks:
+        for s in sinks:
+            pp.create_sink(net,
+                           junction=s.get('junction'),
+                           mdot_kg_per_s=s.get('mdot_kg_per_s'),
+                           scaling=s.get('scaling'),
+                           name=s.get('name'),
+                           in_service=s.get('in_service'),
+                           type='sink')
 
     return sinks
 
@@ -205,7 +218,7 @@ def _import_controllers_to(net, path):
     f = open(path + 'controllers.json')
     controllers = json.load(f)
 
-    # add valves to pandapipes network
+    # add controllers to pandapipes network
     for c in controllers:
         if c.get('type') == 'CtrlValve':
             # create supply flow control
@@ -246,7 +259,7 @@ def _import_external_grids_to(net, path):
     f = open(path+'ext_grids.json')
     ext_grids = json.load(f)
 
-    # add valves to pandapipes network
+    # add external grids to pandapipes network
     for g in ext_grids:
         pp.create_ext_grid(net,
                            junction=g.get('junction'),
@@ -262,12 +275,11 @@ def _import_pumps_to(net, path):
     """
         Import all pump components from import file (json_readable).
     """
-    # TODO: Implement import function of pumps
     # Load JSON from file
     f = open(path+'circ_pump_mass.json')
     circ_pump_mass = json.load(f)
 
-    # add valves to pandapipes network
+    # add pumps to pandapipes network
     for g in circ_pump_mass:
         pp.create_circ_pump_const_mass_flow(net,
                                             return_junction   = g.get('return_junction'),
